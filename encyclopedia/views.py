@@ -30,7 +30,9 @@ def article(request, title):
         return render(request, "encyclopedia/error.html", {"form": form, "content": errormsg})
     else:
         form = FormSearch()
-        return render(request, "encyclopedia/article.html", {"form":form, "content": entry, "title": title})
+        raw_content = util.get_entry(title)
+        content = markdown2.markdown(raw_content)
+        return render(request, "encyclopedia/article.html", {"form":form, "content": content, "title": title})
     
 
 def search(request, input):
@@ -46,13 +48,11 @@ def edit_page(request, title):
             form = FormSearch()
             content = markdown2.markdown(raw_content)
             return render(request, "encyclopedia/article.html", {"title": title, "content": content, "form": form})
-        else:
-            form = FormSearch()
-            edit = EditEntry({"title": title, "content": util.get_entry(title)})
-            return render(request, "encyclopedia/edit_page.html", {"form": form, "edit_form": edit})
-
-
-    return
+    else:
+        form = FormSearch()
+        content = util.get_entry(title)
+        edit_form = EditEntry({"title": title, "content": content})
+        return render(request, "encyclopedia/edit_page.html", {"form": form, "edit_form": edit_form})
 
 
 def new_page(request):
