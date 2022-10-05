@@ -75,7 +75,7 @@ def new_page(request):
             else:
                 em = f'Article already exists'
                 messages.error(request, em)
-                return redirect("encyclopedia:error")
+                return redirect("error")
     else:
         form = FormSearch()
         new = CreateEntry()
@@ -83,6 +83,7 @@ def new_page(request):
 
 
 def error(request):
+    msg = f'Something went wrong'
     return render(request, "encyclopedia/error.html", {"errormsg": msg})
 
 def random_page(request):

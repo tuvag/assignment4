@@ -5,5 +5,10 @@
 {% endblock %}
 
 {% block body %}
-
+<p>Inne i editform</p>
+<form action="{% url 'edit_page' title=edit_form.data.title %}" method="POST">
+    {% csrf_token %}
+    {{ edit_form }}
+    <input type="Submit" name="Save" value="Submit"/>
+</form>
 {% endblock %}
