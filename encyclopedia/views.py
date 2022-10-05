@@ -1,7 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django import forms
 import random
 import markdown2
+from django.contrib import messages
 
 from . import util
 
@@ -29,11 +30,60 @@ def article(request, title):
         return render(request, "encyclopedia/error.html", {"form": form, "content": errormsg})
     else:
         form = FormSearch()
-        return render(request, "encyclopedia/entry.html", {"form":form, "content": entry, "title": title})
+        return render(request, "encyclopedia/article.html", {"form":form, "content": entry, "title": title})
     
 
 def search(request, input):
     return
+
+def edit_page(request, title):
+    if request.method == "POST":
+        edit = EditEntry(request.POST)
+        if edit.is_valid():
+            title = edit.cleaned_data.get("title")
+            raw_content = edit.cleaned_data("content")
+            util.save_entry(title, raw_content)
+            form = FormSearch()
+            content = markdown2.markdown(raw_content)
+            return render(request, "encyclopedia/article.html", {"title": title, "content": content, "form": form})
+        else:
+            form = FormSearch()
+            edit = EditEntry({"title": title, "content": util.get_entry(title)})
+            return render(request, "encyclopedia/edit_page.html", {"form": form, "edit_form": edit})
+
+
+    return
+
+
+def new_page(request):
+    if request.method == "POST":
+        form = CreateEntry(request.POST)
+        if form.is_valid():
+            title = form.cleaned_data.get("title")
+            content = form.cleaned_data.get("content")
+            exsist = False
+            for article in util.list_entries():
+                if article == title:
+                    exsist = True
+            if not exsist:
+                util.save_entry(title, content)
+                form = FormSearch()
+                raw_content = util.get_entry(title)
+                content = markdown2.markdown(raw_content)
+                messages.success(request, f'New aritcle was added')
+                return render(request, "encyclopedia/new_page.html", {"form": form, "title":title, "content":content})
+            else:
+                em = f'Article already exists'
+                messages.error(request, em)
+                return redirect("encyclopedia:error")
+    else:
+        form = FormSearch()
+        new = CreateEntry()
+        return render(request, "encyclopedia/new_page.html", {"form": form, "new_form": new})
+
+
+def error(request):
+    return render(request, "encyclopedia/error.html", {"errormsg": msg})
 
 def random_page(request):
     pages = util.list_entries()

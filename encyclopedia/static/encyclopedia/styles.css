@@ -35,3 +35,11 @@ textarea {
 .sidebar h2 {
     margin-top: 5px;
 }
+
+li.success{
+    color: green;
+}
+
+li.error{
+    color: red;
+}
