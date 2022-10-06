@@ -18,6 +18,7 @@ class EditEntry(forms.Form):
     content = forms.CharField(label= "Edit content", widget=forms.Textarea(attrs={'rows': 15, 'cols': 50}))
 
 def index(request):
+    form = FormSearch()
     return render(request, "encyclopedia/index.html", {
         "entries": util.list_entries()
     })
@@ -35,9 +36,30 @@ def article(request, title):
         return render(request, "encyclopedia/article.html", {"form":form, "content": content, "title": title})
     
 
-def search(request, input):
-    
-    return
+def search(request):
+    if request.method == "POST":
+        form = FormSearch(request.POST) 
+        if form.is_valid():
+            input = form.cleaned_data.get("search")
+            search_list= []
+            for article in util.list_entries():
+                if input == article:
+                    raw_content = util.get_entry(article)
+                    content = markdown2.markdown(raw_content)
+                    return render(request, "encyclopedia/article.html", {"form":form, "content":content, "title": article})
+                if input in article:
+                    search_list.append(input)
+            if len(search_list) > 0:
+                return render(request, "encyclopedia/index.html", {"form":form, "entries":search_list})
+            else:
+                form = FormSearch()
+                msg= f'Cannot find the entry you are looking for.'
+                return render(request, "encyclopedia/error.html", {"form":form, "content":msg})
+    else:
+        form = FormSearch()
+        msg = f'Search to see results'
+        return render(request, "encyclopedia/error.html", {"form":form, "content":msg})
+
 
 def edit_page(request, title):
     if request.method == "POST":
@@ -72,7 +94,7 @@ def new_page(request):
                 raw_content = util.get_entry(title)
                 content = markdown2.markdown(raw_content)
                 messages.success(request, f'New aritcle was added')
-                return render(request, "encyclopedia/new_page.html", {"form": form, "title":title, "content":content})
+                return render(request, "encyclopedia/article.html", {"form": form, "title":title, "content":content})
             else:
                 em = f'Article already exists'
                 messages.error(request, em)
