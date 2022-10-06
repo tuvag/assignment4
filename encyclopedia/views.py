@@ -11,11 +11,11 @@ class FormSearch(forms.Form):
 
 class CreateEntry(forms.Form):
     title = forms.CharField(label= "Add title here")
-    content = forms.CharField(label="Add content here", widget=forms.Textarea)
+    content = forms.CharField(label="Add content here", widget=forms.Textarea(attrs={'rows': 15, 'cols': 50}))
 
 class EditEntry(forms.Form):
     title = forms.CharField(label= "Edit title")
-    body = forms.CharField(label= "Edit content", widget=forms.Textarea)
+    content = forms.CharField(label= "Edit content", widget=forms.Textarea(attrs={'rows': 15, 'cols': 50}))
 
 def index(request):
     return render(request, "encyclopedia/index.html", {
@@ -36,6 +36,7 @@ def article(request, title):
     
 
 def search(request, input):
+    
     return
 
 def edit_page(request, title):
@@ -43,7 +44,7 @@ def edit_page(request, title):
         edit = EditEntry(request.POST)
         if edit.is_valid():
             title = edit.cleaned_data.get("title")
-            raw_content = edit.cleaned_data("content")
+            raw_content = edit.cleaned_data.get("content")
             util.save_entry(title, raw_content)
             form = FormSearch()
             content = markdown2.markdown(raw_content)
