@@ -7,7 +7,7 @@ from django.contrib import messages
 from . import util
 
 class FormSearch(forms.Form):
-    search = forms.CharField(max_length=100)
+    q = forms.CharField(max_length=100)
 
 class CreateEntry(forms.Form):
     title = forms.CharField(label= "Add title here")
@@ -40,22 +40,30 @@ def search(request):
     if request.method == "POST":
         form = FormSearch(request.POST) 
         if form.is_valid():
-            input = form.cleaned_data.get("search")
+            input = form.cleaned_data.get("q")
             search_list= []
             for article in util.list_entries():
                 if input == article:
-                    raw_content = util.get_entry(article)
-                    content = markdown2.markdown(raw_content)
-                    return render(request, "encyclopedia/article.html", {"form":form, "content":content, "title": article})
-                if input in article:
-                    search_list.append(input)
+                    #raw_content = util.get_entry(article)
+                    #content = markdown2.markdown(raw_content)
+                    #return render(request, "encyclopedia/article.html", {"form":form, "content":content, "title": article})
+                    return redirect('article', title = article)
+                #if input in article:
+                if input.lower() in article.lower():
+                    search_list.append(article)
             if len(search_list) > 0:
+                # need to give some sort of mtessage saying that "here are close matches". 
+                # this might require a separate template, rather than reusing index.html.  
                 return render(request, "encyclopedia/index.html", {"form":form, "entries":search_list})
             else:
                 form = FormSearch()
                 msg= f'Cannot find the entry you are looking for.'
-                return render(request, "encyclopedia/error.html", {"form":form, "content":msg})
+                msglist = []
+                msglist.append(msg)
+                return render(request, "encyclopedia/error.html", {"form":form, "messages":msglist})
+        print("not value")
     else:
+        # this code can never be invoked. 
         form = FormSearch()
         msg = f'Search to see results'
         return render(request, "encyclopedia/error.html", {"form":form, "content":msg})
@@ -68,9 +76,11 @@ def edit_page(request, title):
             title = edit.cleaned_data.get("title")
             raw_content = edit.cleaned_data.get("content")
             util.save_entry(title, raw_content)
-            form = FormSearch()
-            content = markdown2.markdown(raw_content)
-            return render(request, "encyclopedia/article.html", {"title": title, "content": content, "form": form})
+            #form = FormSearch()
+            #content = markdown2.markdown(raw_content)
+            #return render(request, "encyclopedia/article.html", {"title": title, "content": content, "form": form})
+            # needs to be a redirect
+            return redirect('article', title=title)
     else:
         form = FormSearch()
         content = util.get_entry(title)
@@ -84,17 +94,20 @@ def new_page(request):
         if form.is_valid():
             title = form.cleaned_data.get("title")
             content = form.cleaned_data.get("content")
-            exsist = False
-            for article in util.list_entries():
-                if article == title:
-                    exsist = True
-            if not exsist:
+            # exsist = False
+            # for article in util.list_entries():
+            #     if article == title:
+            #         exsist = True
+            #  if not exsist:
+            if util.get_entry(title) == None:
                 util.save_entry(title, content)
-                form = FormSearch()
-                raw_content = util.get_entry(title)
-                content = markdown2.markdown(raw_content)
+                #form = FormSearch()
+                #raw_content = util.get_entry(title)
+                #content = markdown2.markdown(raw_content)
                 messages.success(request, f'New aritcle was added')
-                return render(request, "encyclopedia/article.html", {"form": form, "title":title, "content":content})
+                # needs to be a redirect
+                #return render(request, "encyclopedia/article.html", {"form": form, "title":title, "content":content})
+                return redirect('article', title=title)
             else:
                 em = f'Article already exists'
                 messages.error(request, em)
@@ -109,7 +122,7 @@ def error(request):
     msg = f'Something went wrong'
     return render(request, "encyclopedia/error.html", {"errormsg": msg})
 
-def random_page(request):
+def random_page2(request):
     pages = util.list_entries()
     length = len(pages)
     number = random.randint(0, length-1)
@@ -119,4 +132,6 @@ def random_page(request):
     form = FormSearch()
     return render(request, "encyclopedia/random_page.html", {"form": form, "title": title, "content": html_page})
 
-
+def random_page(request):
+   entry_name = random.choice(util.list_entries())
+   return redirect("article", title=entry_name)
